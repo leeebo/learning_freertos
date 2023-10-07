@@ -17,28 +17,29 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-static const char *TAG = "TASK";
+static const char *TAG1 = "TASK1";
+static const char *TAG2 = "TASK2";
 static QueueHandle_t evt_queue = NULL;
 
 static void sender_task(void *arg)
 {
     uint32_t io_num = 0; 
-    ESP_LOGI(TAG, "Sending task");
+    ESP_LOGI(TAG1, "Sending task");
     while (1) {
-        ESP_LOGI(TAG, "Sending = %" PRIu32, io_num);
+        ESP_LOGI(TAG1, "Sending = %" PRIu32, ++io_num);
         xQueueSend(evt_queue, &io_num, portMAX_DELAY);
-        ESP_LOGI(TAG, "Sent = %" PRIu32, io_num);
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        ESP_LOGI(TAG1, "Sent = %" PRIu32 " Done \n", io_num);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
 static void receiver_task(void *arg)
 {
     uint32_t io_num = 0;
-    ESP_LOGI(TAG, "Receiver task");
+    ESP_LOGI(TAG2, "Receiver task");
     while (1) {
         if(xQueueReceive(evt_queue, &io_num, portMAX_DELAY)) {
-            ESP_LOGW(TAG, "Received = %" PRIu32, io_num);
+            ESP_LOGW(TAG2, "Received = %" PRIu32, io_num);
         }
     }
 }
@@ -49,6 +50,6 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(100));
     evt_queue = xQueueCreate(10, sizeof(uint32_t));
     //Create and start stats task
-    xTaskCreatePinnedToCore(sender_task, "sender", 4096, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(receiver_task, "receiver", 4096, NULL, 6, NULL, 0);
+    xTaskCreatePinnedToCore(sender_task, "sender", 4096, NULL, 5, NULL, 0);
 }
